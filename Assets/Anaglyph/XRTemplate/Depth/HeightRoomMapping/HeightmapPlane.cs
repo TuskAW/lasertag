@@ -1,14 +1,13 @@
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
-using Unity.Burst;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class HeightmapPlane : MonoBehaviour
 {
 	public int subdivisions = 10; // Number of subdivisions along each axis
 	public float planeSize = 10f; // Size of the plane
-	public float heightMultiplier = 2f; // How much the heightmap affects the vertices
+	public float heightMultiplier = 3f; // How much the heightmap affects the vertices
 
 	private Mesh mesh;
 
@@ -77,7 +76,7 @@ public class HeightmapPlane : MonoBehaviour
 		mesh.RecalculateNormals();
 
 		meshFilter.sharedMesh = mesh;
-		meshCollider.sharedMesh = mesh;
+		//meshCollider.sharedMesh = mesh;
 	}
 
 	// Function to apply heightmap using Burst job
@@ -104,7 +103,6 @@ public class HeightmapPlane : MonoBehaviour
 
 		JobHandle jobHandle = heightmapJob.Schedule(verticesArray.Length, 128); // Schedule with a batch size of 64
 		jobHandle.Complete(); // Wait for the job to complete
-		
 
 		// Apply the new vertices back to the mesh
 		mesh.vertices = verticesArray.ToArray();
@@ -134,12 +132,12 @@ public class HeightmapPlane : MonoBehaviour
 			int x = (int)(uv.x * heightmapWidth);
 
 			if (x < 0) x = 0;
-			else if (x > heightmapWidth) x = heightmapWidth;
+			else if (x >= heightmapWidth) x = heightmapWidth - 1;
 
 			int y = (int)(uv.y * heightmapHeight);
 
 			if (y < 0) y = 0;
-			else if (y > heightmapHeight) x = heightmapHeight;
+			else if (y >= heightmapHeight) y = heightmapHeight - 1;
 
 			// Sample the height from the heightmap (using red channel, assuming grayscale)
 			float heightValue = heightmap[y * heightmapWidth + x].r;
@@ -151,10 +149,7 @@ public class HeightmapPlane : MonoBehaviour
 
 			if (vHeight < 0) return;
 
-			if(vertex.y > vHeight)
-				vertex.y = vHeight;
-
-			//vertex.y = heightValue * heightMultiplier;
+			vertex.y = heightValue * heightMultiplier;
 
 			vertices[index] = vertex;
 		}

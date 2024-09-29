@@ -15,14 +15,12 @@ namespace Anaglyph.XRTemplate
 
 		private void Awake()
 		{
-			DepthTexture = new Texture2D(depthRenderTexture.width, depthRenderTexture.height, TextureFormat.RFloat, false);
+			DepthTexture = new Texture2D(depthRenderTexture.width, depthRenderTexture.height, TextureFormat.RGBA32, false);
 		}
 
 		private void Start()
 		{
-			RenderTexture.active = depthRenderTexture;
-			GL.Clear(true, true, Color.white);
-			RenderTexture.active = null;
+
 		}
 
 		public void UpdateDepthTextureAsync()
@@ -31,7 +29,7 @@ namespace Anaglyph.XRTemplate
 				return;
 
 			ready = false;
-			AsyncGPUReadback.Request(depthRenderTexture, 0, TextureFormat.RFloat, OnReadbackComplete);
+			AsyncGPUReadback.Request(depthRenderTexture, 0, TextureFormat.RGBA32, OnReadbackComplete);
 		}
 
 		void OnReadbackComplete(AsyncGPUReadbackRequest request)
