@@ -11,17 +11,70 @@ float HeightMax;
 int HeightTexSize;
 int DepthSamples;
 
-[numthreads(1, 1, 1)] 
+float MinDistance;
+float MaxDistance;
+
+float3 DepthFramePos;
+
+float CropFactor;
+
+float WorldHeight(float2 uv)
+{
+	return Map[uv * HeightTexSize].r * HeightMax;
+}
+
+float FrameMinWorldHeight(float2 uv)
+{
+	return Map[uv * HeightTexSize].b * HeightMax;
+}
+
+float2 WorldToHeightUV(float3 world)
+{
+    return float2(world.xz / RoomSize + 0.5);
+}
+
+bool WorldWithinDepthFrame(float3 world)
+{
+	float3 ndc = WorldtoNDC(world);
+    return (ndc.x > CropFactor) * (ndc.x < 1 - CropFactor)
+		* (ndc.y > CropFactor) * (ndc.y < 1 - CropFactor);
+}
+
+//void WriteWorldToHeight(float3 world)
+//{
+//	float2 uv = WorldToHeightUV(world);
+//	float h = world.y / HeightMax;
+//	Map[uv * HeightTexSize] = float4(h, 0, h, 0);
+//}
+
+
+[numthreads(8, 8, 1)] 
 void CSMain(uint3 id : SV_DispatchThreadID) 
 {
-    float2 depthUV = 0.25 + (((float2) id.xy) / DepthSamples) * 0.5;
+    float2 depthUV = CropFactor + (((float2) id.xy) / DepthSamples) * (1 - CropFactor * 2);
 	
-	float depth = SampleDepthNDC(depthUV); 
+    float depth = SampleDepthNDC(depthUV);
 	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
-	float height = clamp(depthWorld.y / HeightMax, 0, 1) * (depthWorld.y < HeightMax);
-
-	float2 heightUV = clamp(depthWorld.xz / RoomSize + 0.5, 0, 1);
+	bool depthWorldBelowHeight = depthWorld.y < HeightMax;
+    
+    float4 depthEdge = SampleEdgeDepthNDC(depthUV);
+	bool notEdge = (1 - (depthEdge.r - depthEdge.g) * 999) > 0.5;
 	
-	float h = max(Map[heightUV * HeightTexSize].b, height);
-	Map[heightUV * HeightTexSize] = float4(h, 0, h, 0);
+	float dist = distance(depthWorld, DepthFramePos);
+	bool withinDistance = (dist > MinDistance) * (dist < MaxDistance);
+	
+	float2 uv = WorldToHeightUV(depthWorld);
+	
+	float previousHeight = WorldHeight(uv); 
+	float3 previousHeightPos = float3(depthWorld.x, previousHeight, depthWorld.z);
+	bool previousHeightWithinDepthFrame = WorldWithinDepthFrame(previousHeightPos);
+	
+    bool valid = depthWorldBelowHeight * withinDistance * previousHeightWithinDepthFrame * notEdge;
+	
+    float frameMinHeight = FrameMinWorldHeight(uv);
+	
+	float newHeight = max(frameMinHeight, depthWorld.y);
+	newHeight = lerp(previousHeight, newHeight, valid);
+	
+    Map[uv * HeightTexSize] = float4(newHeight, 0, newHeight, 0) / HeightMax;
 }

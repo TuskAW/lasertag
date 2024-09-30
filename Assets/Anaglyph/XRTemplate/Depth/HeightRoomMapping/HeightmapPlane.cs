@@ -5,29 +5,27 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class HeightmapPlane : MonoBehaviour
 {
-	public int subdivisions = 10; // Number of subdivisions along each axis
-	public float planeSize = 10f; // Size of the plane
+	private int subdivisions = 10; // Number of subdivisions along each axis
+	private float planeSize = 10f; // Size of the plane
 	public float heightMultiplier = 3f; // How much the heightmap affects the vertices
 
 	private Mesh mesh;
 
-	private MeshCollider meshCollider;
+	//private MeshCollider meshCollider;
 	private MeshFilter meshFilter;
 
 	private void Awake()
 	{
-		meshCollider = GetComponent<MeshCollider>();
+		//meshCollider = GetComponent<MeshCollider>();
 		meshFilter = GetComponent<MeshFilter>();
 	}
 
-	private void Start()
-	{
-		CreatePlane(subdivisions, planeSize);
-	}
-
 	// Function to create a subdivided plane
-	private void CreatePlane(int subdivisions, float size)
+	public void CreatePlane(int subdivisions, float size)
 	{
+		this.subdivisions = subdivisions;
+		this.planeSize = size;
+
 		// Create arrays for vertices, uvs, and triangles
 		Vector3[] vertices = new Vector3[(subdivisions + 1) * (subdivisions + 1)];
 		Vector2[] uvs = new Vector2[vertices.Length];

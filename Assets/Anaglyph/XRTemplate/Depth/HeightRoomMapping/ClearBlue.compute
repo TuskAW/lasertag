@@ -5,7 +5,7 @@
 
 RWTexture2D<float4> Map;
 
-[numthreads(1, 1, 1)]
+[numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) 
 {	
     float r = Map[id.xy].r;

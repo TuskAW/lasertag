@@ -13,8 +13,10 @@ namespace Anaglyph.XRTemplate.DepthKit
 		Matrix4x4[] dk_View = new Matrix4x4[2];
 		Matrix4x4[] dk_InvView = new Matrix4x4[2];
 
+		public static readonly int Meta_PreprocessedEnvironmentDepthTexture_ID = Shader.PropertyToID("_PreprocessedEnvironmentDepthTexture");
 		public static readonly int Meta_EnvironmentDepthTexture_ID = Shader.PropertyToID("_EnvironmentDepthTexture");
 		public static readonly int dk_DepthTexture_ID = Shader.PropertyToID("dk_DepthTexture");
+		public static readonly int dk_EdgeDepthTexture_ID = Shader.PropertyToID("dk_EdgeDepthTexture");
 		public static readonly int dk_NormalTexture_ID = Shader.PropertyToID("dk_NormalTexture");
 
 		public static readonly int dk_Proj_ID = Shader.PropertyToID(nameof(dk_Proj));
@@ -24,12 +26,10 @@ namespace Anaglyph.XRTemplate.DepthKit
 		public static readonly int dk_InvView_ID = Shader.PropertyToID(nameof(dk_InvView));
 
 		[SerializeField] private EnvironmentDepthManager envDepthTextureProvider;
-		//[SerializeField] private Material normalShader;
-
-		//private RenderTexture normalTexture;
 
 		public Transform trackingSpace;
 		public static bool DepthAvailable { get; private set; }
+		public static Pose LastDepthFramePose { get; private set; }
 
 		private void Update()
 		{
@@ -53,6 +53,9 @@ namespace Anaglyph.XRTemplate.DepthKit
 			Shader.SetGlobalTexture(dk_DepthTexture_ID, 
 				Shader.GetGlobalTexture(Meta_EnvironmentDepthTexture_ID));
 
+			Shader.SetGlobalTexture(dk_EdgeDepthTexture_ID,
+				Shader.GetGlobalTexture(Meta_PreprocessedEnvironmentDepthTexture_ID));
+
 			for (int i = 0; i < dk_Proj.Length; i++)
 			{
 				var desc = Utils.GetEnvironmentDepthFrameDesc(i);
@@ -68,26 +71,6 @@ namespace Anaglyph.XRTemplate.DepthKit
 			Shader.SetGlobalMatrixArray(nameof(dk_InvProj), dk_InvProj);
 			Shader.SetGlobalMatrixArray(nameof(dk_View), dk_View);
 			Shader.SetGlobalMatrixArray(nameof(dk_InvView), dk_InvView);
-
-			{
-				//Shader.SetGlobalVector("dk_DepthTexZBufferParams",
-				//		Shader.GetGlobalVector(ZBufferParamsID));
-
-				//Shader.SetGlobalVector("dk_ZBufferParams",
-				//	Shader.GetGlobalVector("_ZBufferParams"));
-
-				//Shader.SetGlobalMatrixArray("dk_StereoMatrixInvVP",
-				//	Shader.GetGlobalMatrixArray("unity_StereoMatrixInvVP"));
-
-				//Shader.SetGlobalMatrixArray("dk_StereoMatrixVP",
-				//	Shader.GetGlobalMatrixArray("unity_StereoMatrixVP"));
-
-				//Shader.SetGlobalMatrixArray("dk_StereoMatrixV",
-				//	Shader.GetGlobalMatrixArray("unity_StereoMatrixV"));
-
-				//Shader.SetGlobalMatrixArray("dk_StereoMatrixInvP",
-				//	Shader.GetGlobalMatrixArray("unity_StereoMatrixInvP"));
-			}
 		}
 
 		private static readonly Vector3 _scalingVector3 = new(1, 1, -1);
@@ -154,6 +137,8 @@ namespace Anaglyph.XRTemplate.DepthKit
 
 			var viewMatrix = Matrix4x4.TRS(frameDesc.createPoseLocation, depthOrientation,
 				_scalingVector3).inverse;
+
+			LastDepthFramePose = new Pose(frameDesc.createPoseLocation, depthOrientation);
 
 			return viewMatrix;
 		}
