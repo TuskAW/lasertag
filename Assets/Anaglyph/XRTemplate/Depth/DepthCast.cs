@@ -66,7 +66,7 @@ namespace Anaglyph.XRTemplate.DepthKit
 			// Ignore steps along the ray outside of the camera bounds
 			Matrix4x4 projMat = Camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
 			Matrix4x4 viewMat = Camera.worldToCameraMatrix;
-			Plane[] planes = GeometryUtility.CalculateFrustumPlanes(projMat * viewMat);
+			UnityEngine.Plane[] planes = GeometryUtility.CalculateFrustumPlanes(projMat * viewMat);
 			// Ordering: [0] = Left, [1] = Right, [2] = Down, [3] = Up, [4] = Near, [5] = Far
 			// need to nudge Right plane left a bit
 			//planes[1].distance -= 0.1f;
@@ -116,7 +116,7 @@ namespace Anaglyph.XRTemplate.DepthKit
 
 				if (handRejection)
 				{
-					Plane rayPlane = new();
+					UnityEngine.Plane rayPlane = new();
 					rayPlane.SetNormalAndPosition(ray.direction, ray.origin);
 					bool pointBeforeRayOrigin = rayPlane.GetDistanceToPoint(result.Position) > 0;
 
@@ -211,7 +211,7 @@ namespace Anaglyph.XRTemplate.DepthKit
 		}
 
 		// https://gist.github.com/SalvatorePreviti/0ec6a73cb14cd33f12350ae27468f2e7
-		public static bool GetFrustumLineIntersection(Plane[] frustum, Ray ray, Vector3 tolerance, out float d1, out float d2)
+		public static bool GetFrustumLineIntersection(UnityEngine.Plane[] frustum, Ray ray, Vector3 tolerance, out float d1, out float d2)
 		{
 			d1 = 0f;
 			d2 = 0f;

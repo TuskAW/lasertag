@@ -55,8 +55,8 @@ Shader "Unlit/ShowDepthMap"
                 fixed4 col = _PreprocessedEnvironmentDepthTexture.Sample(sampler_PreprocessedEnvironmentDepthTexture, uv);
                 //fixed4 col = _EnvironmentDepthTexture.Sample(sampler_EnvironmentDepthTexture, uv);
                 col.a = 1;
-                col.rgb = col.g;
-               // col.rgb = 1 - (col.r - col.g) * 999;
+                // col.rgb = col.g;
+                col.rgb = (1 - (col.r - col.g) * 999) > 0.5;
                 return col;
             }
             ENDCG

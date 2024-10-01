@@ -3,7 +3,8 @@
 
 #pragma kernel CSMain
 
-RWTexture2D<float4> Map;
+RWTexture2D<float4> HeightMap;
+RWTexture2D<uint> PerFrameHeightMap : register(u0);
 
 float RoomSize;
 float HeightMax;
@@ -18,63 +19,50 @@ float3 DepthFramePos;
 
 float CropFactor;
 
-float WorldHeight(float2 uv)
-{
-	return Map[uv * HeightTexSize].r * HeightMax;
-}
-
-float FrameMinWorldHeight(float2 uv)
-{
-	return Map[uv * HeightTexSize].b * HeightMax;
-}
-
 float2 WorldToHeightUV(float3 world)
 {
-    return float2(world.xz / RoomSize + 0.5);
+	return float2(world.xz / RoomSize + 0.5);
 }
 
 bool WorldWithinDepthFrame(float3 world)
 {
 	float3 ndc = WorldtoNDC(world);
-    return (ndc.x > CropFactor) * (ndc.x < 1 - CropFactor)
+	return (ndc.x > CropFactor) * (ndc.x < 1 - CropFactor)
 		* (ndc.y > CropFactor) * (ndc.y < 1 - CropFactor);
 }
-
-//void WriteWorldToHeight(float3 world)
-//{
-//	float2 uv = WorldToHeightUV(world);
-//	float h = world.y / HeightMax;
-//	Map[uv * HeightTexSize] = float4(h, 0, h, 0);
-//}
-
 
 [numthreads(8, 8, 1)] 
 void CSMain(uint3 id : SV_DispatchThreadID) 
 {
-    float2 depthUV = CropFactor + (((float2) id.xy) / DepthSamples) * (1 - CropFactor * 2);
+	float2 depthUV = CropFactor + (((float2) id.xy) / DepthSamples) * (1 - CropFactor * 2);
 	
-    float depth = SampleDepthNDC(depthUV);
+	float4 depthEdge = SampleEdgeDepthPointNDC(depthUV);
+	float depth = 1 - depthEdge.g;
 	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
 	bool depthWorldBelowHeight = depthWorld.y < HeightMax;
-    
-    float4 depthEdge = SampleEdgeDepthNDC(depthUV);
+	
 	bool notEdge = (1 - (depthEdge.r - depthEdge.g) * 999) > 0.5;
 	
 	float dist = distance(depthWorld, DepthFramePos);
 	bool withinDistance = (dist > MinDistance) * (dist < MaxDistance);
 	
-	float2 uv = WorldToHeightUV(depthWorld);
+	uint2 sampleCoord = WorldToHeightUV(depthWorld) * HeightTexSize;
 	
-	float previousHeight = WorldHeight(uv); 
-	float3 previousHeightPos = float3(depthWorld.x, previousHeight, depthWorld.z);
+	float normHeight = depthWorld.y / HeightMax; 
+	float previousNormHeight = HeightMap[sampleCoord].r;
+	
+	float3 previousHeightPos = float3(depthWorld.x, previousNormHeight * HeightMax, depthWorld.z);
 	bool previousHeightWithinDepthFrame = WorldWithinDepthFrame(previousHeightPos);
 	
     bool valid = depthWorldBelowHeight * withinDistance * previousHeightWithinDepthFrame * notEdge;
 	
-    float frameMinHeight = FrameMinWorldHeight(uv);
+	normHeight = lerp(previousNormHeight, normHeight, valid);
 	
-	float newHeight = max(frameMinHeight, depthWorld.y);
-	newHeight = lerp(previousHeight, newHeight, valid);
+	uint normHeightAsUInt8 = (uint) (normHeight * 255);
+    
+	float4 h = HeightMap[sampleCoord];
+    h.g = lerp(h.g, 1, valid);
+    HeightMap[sampleCoord] = h;
 	
-    Map[uv * HeightTexSize] = float4(newHeight, 0, newHeight, 0) / HeightMax;
+    PerFrameHeightMap[sampleCoord] = max(PerFrameHeightMap[sampleCoord], normHeightAsUInt8);
 }

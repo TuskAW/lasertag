@@ -1,6 +1,8 @@
-Shader "Anaglyph/Grid" {
+Shader "Anaglyph/RoomMap" {
 	Properties {
 		_MainTex ("Texture", 2D) = "white" {}
+		_HeightMap ("HeightMap", 2D) = "black" {}
+		_MaxHeight ("Max Height", Float) = 2
 		_Color("Color", Color) = (0, 0, 1, 1)
 		_Scale("Scale", Float) = 5
 		_Darken("Darken", Range(0, 1)) = 0
@@ -14,39 +16,57 @@ Shader "Anaglyph/Grid" {
 			ZTest LEqual
 
 			HLSLPROGRAM
-			#pragma target 3.0
+			#pragma target 3.0 
 			#pragma glsl
-			#pragma vertex Vert
-			#pragma fragment Frag
-			#include "UnityCG.cginc"
+			#pragma vertex vert
+            #pragma fragment frag
 
-			sampler2D _MainTex;
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+			TEXTURE2D(_MainTex);
+			SAMPLER(sampler_MainTex);
+			TEXTURE2D(_HeightMap);
+			SAMPLER(sampler_HeightMap);
+
 			float _Scale;
 			float4 _Color;
 			float _Darken;
+			float _MaxHeight;
 
-			struct data
-			{
-				float4 position : POSITION;
-				float3 uvPos : TEXCOORD0;
-			};
+			struct Attributes
+            {
+                float4 positionOS   : POSITION;
+                float2 uv           : TEXCOORD0;
+            };
 
-			data Vert(appdata_base v)
+            struct Varyings
+            {
+                float4 positionHCS  : SV_POSITION;
+                float2 uv           : TEXCOORD0;
+				float3 positionOBJ     : TEXCOORD1;
+            };
+
+			Varyings vert(Attributes IN) 
 			{
-				data res;
-				res.position = UnityObjectToClipPos( v.vertex);
-				res.uvPos = v.vertex;
-				return res;
+				Varyings OUT;
+
+				float3 v = IN.positionOS;
+				v.y = SAMPLE_TEXTURE2D_LOD(_HeightMap, sampler_HeightMap, IN.uv, 0).r * _MaxHeight;
+
+				OUT.positionHCS = TransformObjectToHClip(v);
+				OUT.positionOBJ = v; 
+				OUT.uv = IN.uv;
+				return OUT;
 			}
 
-			float4 Frag(data input) : SV_Target
+			float4 frag(Varyings IN) : SV_Target
 			{
-				float3 uvPosScaled = input.uvPos * _Scale;
+				float3 uvPosScaled = IN.positionOBJ * _Scale;
 				uvPosScaled -= float3(0, 0.2, 0);
 
-				float4 result = tex2D(_MainTex, uvPosScaled.yz);
-				      result += tex2D(_MainTex, uvPosScaled.xz); 
-				      result += tex2D(_MainTex, uvPosScaled.xy);
+				float4 result = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.yz);
+				      result += SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.xy);
+				      result += SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.xz);
 
 				result.rgba = _Color.rgba * result.r; 
 				 

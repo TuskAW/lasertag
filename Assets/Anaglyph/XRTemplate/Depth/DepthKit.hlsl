@@ -23,6 +23,11 @@ float4 SampleEdgeDepthNDC(float2 uv, int eye = 0)
     return dk_EdgeDepthTexture.SampleLevel(bilinearClampSampler, float3(uv.xy, eye), 0);
 }
 
+float4 SampleEdgeDepthPointNDC(float2 uv, int eye = 0)
+{
+    return dk_EdgeDepthTexture.SampleLevel(pointClampSampler, float3(uv.xy, eye), 0);
+}
+
 //float SampleDepthPointNDC(float2 uv, int eye = 0)
 //{
 //    return dk_DepthTexture.SampleLevel(pointClampSampler, float3(uv.xy, eye), 0).r;

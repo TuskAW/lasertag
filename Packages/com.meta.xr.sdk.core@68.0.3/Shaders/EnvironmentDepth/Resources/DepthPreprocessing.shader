@@ -60,6 +60,14 @@ Shader "Meta/EnvironmentDepth/Preprocessing"
                 float2(0.0f, -2.0f)
               };
 
+              // static const float2 offsets[NUM_SAMPLES] = {
+              //   float2(10.0f, 0.0f),
+              //   float2(0.0f, 10.0f),
+              //   float2(-10.0f, 0.0f),
+              //   float2(0.0f, 0.0f),
+              //   float2(0.0f, -10.0f)
+              // };
+
               float4 depths[NUM_SAMPLES];
               const float2 onePixelOffset = _EnvironmentDepthTexture_TexelSize.xy;
 

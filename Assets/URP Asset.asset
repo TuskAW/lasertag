@@ -25,9 +25,9 @@ MonoBehaviour:
   m_SupportsTerrainHoles: 0
   m_SupportsHDR: 0
   m_HDRColorBufferPrecision: 0
-  m_MSAA: 2
+  m_MSAA: 4
   m_RenderScale: 1.3
-  m_UpscalingFilter: 3
+  m_UpscalingFilter: 0
   m_FsrOverrideSharpness: 0
   m_FsrSharpness: 0.92
   m_EnableLODCrossFade: 0
@@ -62,7 +62,7 @@ MonoBehaviour:
   m_ShadowDepthBias: 0.05
   m_ShadowNormalBias: 0
   m_AnyShadowsSupported: 1
-  m_SoftShadowsSupported: 1
+  m_SoftShadowsSupported: 0
   m_ConservativeEnclosingSphere: 0
   m_NumIterationsEnclosingSphere: 64
   m_SoftShadowQuality: 1
