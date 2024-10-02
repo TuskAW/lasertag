@@ -1,5 +1,3 @@
-using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -8,9 +6,19 @@ public class MeshPlane : MonoBehaviour
 {
 	private MeshFilter meshFilter;
 
+	[SerializeField] private int verticesPerSide;
+	[SerializeField] private float size;
+	[SerializeField] private bool generateOnStart;
+
 	private void Awake()
 	{
 		meshFilter = GetComponent<MeshFilter>();
+	}
+
+	private void Start()
+	{
+		if(generateOnStart)
+			GeneratePlaneMesh(verticesPerSide, size);
 	}
 
 	// Function to create a subdivided plane

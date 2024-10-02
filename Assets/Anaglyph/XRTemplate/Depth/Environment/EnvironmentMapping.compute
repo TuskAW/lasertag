@@ -1,0 +1,64 @@
+// https://github.com/oculus-samples/Unity-DepthAPI/issues/16
+#include "../DepthKit.hlsl"
+#include "DepthKitEnvironment.hlsl"
+
+#pragma kernel CSMain
+
+//RWTexture2D<float4> agdk_EnvHeightMapWritable;
+RWTexture2D<uint2> PerFrameHeightMap : register(u0);
+
+int HeightTexSize;
+int DepthSamples;
+float DepthCrop;
+
+float MinDistance;
+float MaxDistance;
+
+float3 DepthFramePos;
+
+float EdgeSize;
+float MaxGradient;
+
+bool WorldWithinDepthFrame(float3 world)
+{
+    float3 ndc = WorldtoNDC(world);
+    return (ndc.x > DepthCrop) * (ndc.x < 1 - DepthCrop)
+		* (ndc.y > DepthCrop) * (ndc.y < 1 - DepthCrop);
+}
+
+[numthreads(8, 8, 1)] 
+void CSMain(uint3 id : SV_DispatchThreadID) 
+{
+    float2 depthUV = DepthCrop + (((float2) id.xy) / DepthSamples) * (1 - DepthCrop * 2);
+	
+    float depth = SampleDepthNDC(depthUV);
+	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
+    bool depthWorldBelowHeight = depthWorld.y < agdk_EnvMaxHeight;
+	
+	float dist = distance(depthWorld.xz, DepthFramePos.xz);
+	bool withinDistance = (dist > MinDistance) * (dist < MaxDistance);
+	
+    uint2 sampleCoord = agdk_WorldToEnvHeightUV(depthWorld) * HeightTexSize;
+	
+    float normHeight = depthWorld.y / agdk_EnvMaxHeight;
+    float previousNormHeight = agdk_EnvHeightMap[sampleCoord].r;
+	
+    float3 previousHeightPos = float3(depthWorld.x, previousNormHeight * agdk_EnvMaxHeight, depthWorld.z);
+	bool previousHeightWithinDepthFrame = WorldWithinDepthFrame(previousHeightPos, DepthCrop);
+	
+	// sobel outline
+    float depthLinear = DepthNDCToLinear(depth);
+    float depthLinearL = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(-EdgeSize, 0)));
+    float depthLinearR = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(EdgeSize, 0)));
+    float depthLinearU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, EdgeSize)));
+    float depthLinearD = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, -EdgeSize)));
+    float sob = abs(depthLinearL - depthLinear) + abs(depthLinearR - depthLinear) + abs(depthLinearU - depthLinear) + abs(depthLinearD - depthLinear);
+    bool notEdge = sob < MaxGradient;
+	
+    bool valid = depthWorldBelowHeight * withinDistance * previousHeightWithinDepthFrame * notEdge;
+	
+	normHeight = lerp(previousNormHeight, normHeight, valid);
+	
+	uint normHeightAsUInt8 = (uint) (normHeight * 255);
+    PerFrameHeightMap[sampleCoord] = uint2(max(PerFrameHeightMap[sampleCoord].r, normHeightAsUInt8), 1);
+}

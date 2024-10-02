@@ -1,5 +1,5 @@
-// https://github.com/oculus-samples/Unity-DepthAPI/issues/16
 #include "DepthKit.hlsl"
+#include "Environment/DepthKitEnvironment.hlsl"
 
 #pragma kernel CSMain
 
@@ -16,10 +16,13 @@ struct RaycastResult
 
 StructuredBuffer<float3> RaycastRequests;
 RWStructuredBuffer<RaycastResult> RaycastResults;
+Texture2D<float4> WorldHeightMap;
 
 float3 WorldStart;
 float3 WorldEnd; 
 int NumSamples;
+
+#define USE_HEIGHT_DIST 5
 
 [numthreads(32, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) 
@@ -29,26 +32,41 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	const float rayStep = i / (float) NumSamples;
 	 
 	const float3 rayWorld = lerp(WorldStart, WorldEnd, rayStep);
-	const float3 rayNDC = WorldtoNDC(rayWorld);
-	float2 rayUV = rayNDC.xy;
+	
+    //bool useWorldHeightTest = (distance(rayWorld.xz, WorldStart.xz) > UseHeightDist) && (rayWorld.y < MaxWorldHeight);
+	
+    RaycastResults[i].ZDepthDiff = rayWorld.y - agdk_SampleEnvHeightWorld(rayWorld) * agdk_EnvMaxHeight;
+    RaycastResults[i].Normal = float3(0, 1, 0);
+    
+ //   if (useWorldHeightTest)
+ //   {
+        
+ //   }
+ //   else
+ //   {
+ //       const float3 rayNDC = WorldtoNDC(rayWorld);
+ //       float2 rayUV = rayNDC.xy;
 
-	// depth compare to find closest point of intersection
-	const float envDepth = SampleDepthNDC(rayUV);
-	RaycastResults[i].ZDepthDiff = envDepth - rayNDC.z;
+	//// depth compare to find closest point of intersection
+ //       const float envDepth = SampleDepthNDC(rayUV);
+ //       RaycastResults[i].ZDepthDiff = envDepth - rayNDC.z;
 	
-	// world pos position
-	const float3 depthWorld = NDCtoWorld(float3(rayUV, envDepth));
-	RaycastResults[i].Position = depthWorld;
+	//// world pos position
+ //       const float3 depthWorld = NDCtoWorld(float3(rayUV, envDepth));
+ //       RaycastResults[i].Position = depthWorld;
 	
-	// world norm
-	rayUV = rayNDC.xy + float2(0.003, 0.0);
-	float3 depthWorldH = NDCtoWorld(float3(rayUV, SampleDepthNDC(rayUV)));
+	//// world norm
+ //       rayUV = rayNDC.xy + float2(0.003, 0.0);
+ //       float3 depthWorldH = NDCtoWorld(float3(rayUV, SampleDepthNDC(rayUV)));
 
-	rayUV = rayNDC.xy + float2(0.0, 0.003);
-	float3 depthWorldV = NDCtoWorld(float3(rayUV, SampleDepthNDC(rayUV)));
+ //       rayUV = rayNDC.xy + float2(0.0, 0.003);
+ //       float3 depthWorldV = NDCtoWorld(float3(rayUV, SampleDepthNDC(rayUV)));
 	
-	const float3 hDeriv = depthWorldH - depthWorld;
-	const float3 vDeriv = depthWorldV - depthWorld;
+ //       const float3 hDeriv = depthWorldH - depthWorld;
+ //       const float3 vDeriv = depthWorldV - depthWorld;
 	
-	RaycastResults[i].Normal = -normalize(cross(hDeriv, vDeriv));;
+ //       RaycastResults[i].Normal = -normalize(cross(hDeriv, vDeriv));
+ //   }
+    
+    RaycastResults[i].Position = rayWorld;
 }

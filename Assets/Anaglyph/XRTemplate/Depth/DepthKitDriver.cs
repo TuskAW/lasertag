@@ -15,9 +15,11 @@ namespace Anaglyph.XRTemplate.DepthKit
 
 		public static readonly int Meta_PreprocessedEnvironmentDepthTexture_ID = Shader.PropertyToID("_PreprocessedEnvironmentDepthTexture");
 		public static readonly int Meta_EnvironmentDepthTexture_ID = Shader.PropertyToID("_EnvironmentDepthTexture");
+		public static readonly int Meta_EnvironmentDepthZBufferParams_ID = Shader.PropertyToID("_EnvironmentDepthZBufferParams");
 		public static readonly int dk_DepthTexture_ID = Shader.PropertyToID("dk_DepthTexture");
 		public static readonly int dk_EdgeDepthTexture_ID = Shader.PropertyToID("dk_EdgeDepthTexture");
 		public static readonly int dk_NormalTexture_ID = Shader.PropertyToID("dk_NormalTexture");
+		public static readonly int dk_ZBufferParams_ID = Shader.PropertyToID("dk_ZBufferParams");
 
 		public static readonly int dk_Proj_ID = Shader.PropertyToID(nameof(dk_Proj));
 		public static readonly int dk_InvProj_ID = Shader.PropertyToID(nameof(dk_InvProj));
@@ -55,6 +57,9 @@ namespace Anaglyph.XRTemplate.DepthKit
 
 			Shader.SetGlobalTexture(dk_EdgeDepthTexture_ID,
 				Shader.GetGlobalTexture(Meta_PreprocessedEnvironmentDepthTexture_ID));
+
+			Shader.SetGlobalVector(dk_ZBufferParams_ID,
+				Shader.GetGlobalVector(Meta_EnvironmentDepthZBufferParams_ID));
 
 			for (int i = 0; i < dk_Proj.Length; i++)
 			{

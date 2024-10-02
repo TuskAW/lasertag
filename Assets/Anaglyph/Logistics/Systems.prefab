@@ -115,6 +115,8 @@ GameObject:
   - component: {fileID: 5165934986485531721}
   - component: {fileID: 6795854006561429885}
   - component: {fileID: 2883331069506957876}
+  - component: {fileID: 3995112853627015983}
+  - component: {fileID: 6196957721144016666}
   - component: {fileID: 7812237449445609425}
   m_Layer: 0
   m_Name: Systems
@@ -427,6 +429,74 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 11400000, guid: debc4143f5328d34e9b48b0f5890dceb, type: 2}
+        m_TargetAssemblyTypeName: VariableObjects.GenericVariableObject`1[[System.Boolean,
+          mscorlib
+        m_MethodName: Set
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &3995112853627015983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1252286925736113731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c37e109f64551fc42b510f84ef9ab494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapCS: {fileID: 7200000, guid: c48d18ef3b30e1e45a887e461cbef191, type: 3}
+  applyCS: {fileID: 7200000, guid: 455591a1180a82641b267a783b2460c7, type: 3}
+  heightRTex: {fileID: 8400000, guid: 1eb5be4ba7caeb54ead07444a9c3dec8, type: 2}
+  perFrameHeightRTex: {fileID: 8400000, guid: 5679e5e8c83b5e94ea20e829e95da870, type: 2}
+  minDistance: 0.5
+  maxDistance: 6
+  edgeSize: 0.02
+  maxGradient: 0.3
+  roomSize: 50
+  maxWallHeight: 2
+  depthSamples: 512
+  cropFactor: 0.1
+--- !u!114 &6196957721144016666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1252286925736113731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bce009f3c9554aa4caeca764c4245fea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scriptableVariable: {fileID: 11400000, guid: 1c9f6841c2b35894aa40ac641e1be7e8, type: 2}
+  onChange:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3995112853627015983}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  beforeChange:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &7812237449445609425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -562,6 +632,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -760,6 +833,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
