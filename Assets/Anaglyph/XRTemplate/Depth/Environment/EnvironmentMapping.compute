@@ -1,64 +1,89 @@
 // https://github.com/oculus-samples/Unity-DepthAPI/issues/16
 #include "../DepthKit.hlsl"
-#include "DepthKitEnvironment.hlsl"
+#include "Environment.hlsl"
 
-#pragma kernel CSMain
+#pragma kernel Accumulate
+#pragma kernel Apply
+#pragma kernel Init
 
-//RWTexture2D<float4> agdk_EnvHeightMapWritable;
-RWTexture2D<uint2> PerFrameHeightMap : register(u0);
+RWTexture2D<float2> _EnvHeightMapWritable;
+RWTexture2D<int> _PerFrameHeight : register(u0); // should be 16bit signed int
 
-int HeightTexSize;
-int DepthSamples;
-float DepthCrop;
+uint _TexSize;
+uint _DepthSamples;
+float _DepthCrop;
 
-float MinDistance;
-float MaxDistance;
+float2 _DepthRange;
+float2 _HeightRange;
 
-float3 DepthFramePos;
+float3 _DepthFramePos;
 
-float EdgeSize;
-float MaxGradient;
+float _EdgeFilterSize;
+float _GradientCutoff;
+
+#define HEIGHT_INT_FACTOR 1000
+#define UNWRITTEN_INT -32000
 
 bool WorldWithinDepthFrame(float3 world)
 {
-    float3 ndc = WorldtoNDC(world);
-    return (ndc.x > DepthCrop) * (ndc.x < 1 - DepthCrop)
-		* (ndc.y > DepthCrop) * (ndc.y < 1 - DepthCrop);
+	float3 ndc = WorldtoNDC(world);
+	return (ndc.x > _DepthCrop) * (ndc.x < 1 - _DepthCrop)
+		* (ndc.y > _DepthCrop) * (ndc.y < 1 - _DepthCrop);
 }
 
-[numthreads(8, 8, 1)] 
-void CSMain(uint3 id : SV_DispatchThreadID) 
+[numthreads(64, 1, 1)] 
+void Accumulate(uint3 id : SV_DispatchThreadID)
 {
-    float2 depthUV = DepthCrop + (((float2) id.xy) / DepthSamples) * (1 - DepthCrop * 2);
+	float2 depthUV = _DepthCrop + (((float2) id.xy) / _DepthSamples) * (1 - _DepthCrop * 2);
 	
-    float depth = SampleDepthNDC(depthUV);
+	float depth = SampleDepthNDC(depthUV);
 	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
-    bool depthWorldBelowHeight = depthWorld.y < agdk_EnvMaxHeight;
+    int validY = (_HeightRange.x < depthWorld.y) * (depthWorld.y < _HeightRange.y);
 	
-	float dist = distance(depthWorld.xz, DepthFramePos.xz);
-	bool withinDistance = (dist > MinDistance) * (dist < MaxDistance);
+	float dist = distance(depthWorld.xz, _DepthFramePos.xz);
+    int validDistance = (_DepthRange.x < dist) * (dist < _DepthRange.y);
 	
-    uint2 sampleCoord = agdk_WorldToEnvHeightUV(depthWorld) * HeightTexSize;
+	uint2 mapCoord = agdk_WorldToEnvUV(depthWorld) * _TexSize;
 	
-    float normHeight = depthWorld.y / agdk_EnvMaxHeight;
-    float previousNormHeight = agdk_EnvHeightMap[sampleCoord].r;
+    float prevHeight = _EnvHeightMapWritable[mapCoord].r;
+	float3 prevWorldPos = float3(depthWorld.x, prevHeight, depthWorld.z);
+    int prevHeightInView = WorldWithinDepthFrame(prevWorldPos, _DepthCrop);
 	
-    float3 previousHeightPos = float3(depthWorld.x, previousNormHeight * agdk_EnvMaxHeight, depthWorld.z);
-	bool previousHeightWithinDepthFrame = WorldWithinDepthFrame(previousHeightPos, DepthCrop);
+	// sobel outline - need to optimize 
+	float depthLinear = DepthNDCToLinear(depth);
+	float depthLinearL = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(-_EdgeFilterSize, 0)));
+	float depthLinearR = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(_EdgeFilterSize, 0)));
+	float depthLinearU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, _EdgeFilterSize)));
+	float depthLinearD = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, -_EdgeFilterSize)));
+	float sob = abs(depthLinearL - depthLinear) + abs(depthLinearR - depthLinear) + abs(depthLinearU - depthLinear) + abs(depthLinearD - depthLinear);
+    int notEdge = sob < _GradientCutoff;
 	
-	// sobel outline
-    float depthLinear = DepthNDCToLinear(depth);
-    float depthLinearL = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(-EdgeSize, 0)));
-    float depthLinearR = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(EdgeSize, 0)));
-    float depthLinearU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, EdgeSize)));
-    float depthLinearD = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, -EdgeSize)));
-    float sob = abs(depthLinearL - depthLinear) + abs(depthLinearR - depthLinear) + abs(depthLinearU - depthLinear) + abs(depthLinearD - depthLinear);
-    bool notEdge = sob < MaxGradient;
+	int valid = validY * validDistance * prevHeightInView * notEdge;
 	
-    bool valid = depthWorldBelowHeight * withinDistance * previousHeightWithinDepthFrame * notEdge;
+    int height = round(lerp(prevHeight, depthWorld.y, valid) * HEIGHT_INT_FACTOR);
 	
-	normHeight = lerp(previousNormHeight, normHeight, valid);
+    //_PerFrameHeight[mapCoord] = max(_PerFrameHeight[mapCoord], height);
+    //GroupMemoryBarrierWithGroupSync();
+	InterlockedMax(_PerFrameHeight[mapCoord], height);
+}
+
+[numthreads(8, 8, 1)]
+void Apply(uint3 id : SV_DispatchThreadID)
+{
+	int h = _PerFrameHeight[id.xy];
+    float2 p = _EnvHeightMapWritable[id.xy];
 	
-	uint normHeightAsUInt8 = (uint) (normHeight * 255);
-    PerFrameHeightMap[sampleCoord] = uint2(max(PerFrameHeightMap[sampleCoord].r, normHeightAsUInt8), 1);
+    _PerFrameHeight[id.xy] = UNWRITTEN_INT;
+    int written = (h != UNWRITTEN_INT);
+	
+    float r = lerp(p.r, (float) h / (float) HEIGHT_INT_FACTOR, written);
+    float g = max(p.g, written);
+    _EnvHeightMapWritable[id.xy] = float2(r, g);
+}
+
+[numthreads(8, 8, 1)]
+void Init(uint3 id : SV_DispatchThreadID)
+{
+    _PerFrameHeight[id.xy] = UNWRITTEN_INT;
+    _EnvHeightMapWritable[id.xy] = 0;
 }

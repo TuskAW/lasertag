@@ -47,11 +47,6 @@ namespace Anaglyph.XRTemplate.DepthKit
 			if (!DepthAvailable)
 				return;
 
-			//if(normalTexture == null)
-			//{
-			//	normalTexture = new RenderTexture()
-			//}
-
 			Shader.SetGlobalTexture(dk_DepthTexture_ID, 
 				Shader.GetGlobalTexture(Meta_EnvironmentDepthTexture_ID));
 

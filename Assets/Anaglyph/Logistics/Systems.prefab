@@ -454,18 +454,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c37e109f64551fc42b510f84ef9ab494, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mapCS: {fileID: 7200000, guid: c48d18ef3b30e1e45a887e461cbef191, type: 3}
-  applyCS: {fileID: 7200000, guid: 455591a1180a82641b267a783b2460c7, type: 3}
-  heightRTex: {fileID: 8400000, guid: 1eb5be4ba7caeb54ead07444a9c3dec8, type: 2}
-  perFrameHeightRTex: {fileID: 8400000, guid: 5679e5e8c83b5e94ea20e829e95da870, type: 2}
-  minDistance: 0.5
-  maxDistance: 6
-  edgeSize: 0.02
-  maxGradient: 0.3
-  roomSize: 50
-  maxWallHeight: 2
+  compute: {fileID: 7200000, guid: c48d18ef3b30e1e45a887e461cbef191, type: 3}
+  envMap: {fileID: 8400000, guid: 1eb5be4ba7caeb54ead07444a9c3dec8, type: 2}
+  depthRange: {x: 0.5, y: 5}
+  heightRange: {x: -2, y: 2}
+  edgeFilterSize: 0.02
+  gradientCutoff: 0.3
+  envSize: 50
   depthSamples: 512
-  cropFactor: 0.1
+  depthFrameCrop: 0.25
 --- !u!114 &6196957721144016666
 MonoBehaviour:
   m_ObjectHideFlags: 0

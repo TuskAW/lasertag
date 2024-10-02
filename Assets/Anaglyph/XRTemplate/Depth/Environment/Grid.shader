@@ -1,8 +1,8 @@
+
+
 Shader "Anaglyph/RoomMap" {
 	Properties {
 		_MainTex ("Texture", 2D) = "white" {}
-		_HeightMap ("HeightMap", 2D) = "black" {}
-		_MaxHeight ("Max Height", Float) = 2
 		_Scale("Scale", Float) = 5
 		_Darken("Darken", Range(0, 1)) = 0
 	}
@@ -21,17 +21,13 @@ Shader "Anaglyph/RoomMap" {
 			#pragma fragment frag
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+			#include "Assets/Anaglyph/XRTemplate/Depth/Environment/Environment.hlsl"
 
 			TEXTURE2D(_MainTex);
 			SAMPLER(sampler_MainTex);
-			TEXTURE2D(_HeightMap);
-			SAMPLER(sampler_HeightMap);
-			TEXTURE2D(_PerFrame);
-			SAMPLER(sampler_PerFrame);
 
 			float _Scale;
 			float _Darken;
-			float _MaxHeight;
 
 			struct Attributes
 			{
@@ -51,7 +47,7 @@ Shader "Anaglyph/RoomMap" {
 				Varyings OUT;
 
 				float3 v = IN.positionOS;
-				v.y = SAMPLE_TEXTURE2D_LOD(_HeightMap, sampler_HeightMap, IN.uv, 0).r * _MaxHeight;
+				v.y = agdk_EnvHeightMap.SampleLevel(agdk_pointClampSampler, IN.uv, 0).r;
 
 				OUT.positionHCS = TransformObjectToHClip(v);
 				OUT.positionOBJ = v; 
@@ -68,10 +64,10 @@ Shader "Anaglyph/RoomMap" {
 				           + SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.xy)
 				           + SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.xz);
 				
-				float4 heightMapVal = SAMPLE_TEXTURE2D(_HeightMap, sampler_HeightMap, IN.uv); 
+				float2 heightMapVal = agdk_EnvHeightMap.SampleLevel(agdk_pointClampSampler, IN.uv, 0).rg; 
 
 				float4 result;
-				result.rgb = heightMapVal.rgb * grid;
+				result.rgb = grid;
 				result.a = 1;
 				result *= saturate(grid + _Darken) * heightMapVal.g;
 
