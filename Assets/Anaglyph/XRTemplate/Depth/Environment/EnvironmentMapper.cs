@@ -60,7 +60,7 @@ namespace Anaglyph.XRTemplate
 			Assert.IsTrue(envMap.width ==  envMap.height);
 
 			perFrameMap = new RenderTexture(envMap.width, envMap.height, 0, 
-				GraphicsFormat.R16_SInt);
+				GraphicsFormat.R32_SInt);
 
 			perFrameMap.enableRandomWrite = true;
 
