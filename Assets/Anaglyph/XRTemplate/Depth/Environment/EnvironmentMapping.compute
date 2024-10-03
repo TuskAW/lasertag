@@ -7,7 +7,7 @@
 #pragma kernel Init
 
 RWTexture2D<float2> _EnvHeightMapWritable;
-RWTexture2D<int> _PerFrameHeight : register(u0); // should be 16bit signed int
+RWTexture2D<int> _PerFrameHeight : register(u0); // should be 32bit signed int
 
 uint _TexSize;
 uint _DepthSamples;
@@ -38,16 +38,16 @@ void Accumulate(uint3 id : SV_DispatchThreadID)
 	
 	float depth = SampleDepthNDC(depthUV);
 	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
-    int validY = (_HeightRange.x < depthWorld.y) * (depthWorld.y < _HeightRange.y);
+	int validY = (_HeightRange.x < depthWorld.y) * (depthWorld.y < _HeightRange.y);
 	
 	float dist = distance(depthWorld.xz, _DepthFramePos.xz);
-    int validDistance = (_DepthRange.x < dist) * (dist < _DepthRange.y);
+	int validDistance = (_DepthRange.x < dist) * (dist < _DepthRange.y);
 	
 	uint2 mapCoord = agdk_WorldToEnvUV(depthWorld) * _TexSize;
 	
-    float prevHeight = _EnvHeightMapWritable[mapCoord].r;
+	float prevHeight = _EnvHeightMapWritable[mapCoord].r;
 	float3 prevWorldPos = float3(depthWorld.x, prevHeight, depthWorld.z);
-    int prevHeightInView = WorldWithinDepthFrame(prevWorldPos, _DepthCrop);
+	int prevHeightInView = WorldWithinDepthFrame(prevWorldPos, _DepthCrop);
 	
 	// sobel outline - need to optimize 
 	float depthLinear = DepthNDCToLinear(depth);
@@ -56,14 +56,12 @@ void Accumulate(uint3 id : SV_DispatchThreadID)
 	float depthLinearU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, _EdgeFilterSize)));
 	float depthLinearD = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, -_EdgeFilterSize)));
 	float sob = abs(depthLinearL - depthLinear) + abs(depthLinearR - depthLinear) + abs(depthLinearU - depthLinear) + abs(depthLinearD - depthLinear);
-    int notEdge = sob < _GradientCutoff;
+	int notEdge = sob < _GradientCutoff;
 	
 	int valid = validY * validDistance * prevHeightInView * notEdge;
 	
-    int height = round(lerp(prevHeight, depthWorld.y, valid) * HEIGHT_INT_FACTOR);
+	int height = round(lerp(prevHeight, depthWorld.y, valid) * HEIGHT_INT_FACTOR);
 	
-    //_PerFrameHeight[mapCoord] = max(_PerFrameHeight[mapCoord], height);
-    //GroupMemoryBarrierWithGroupSync();
 	InterlockedMax(_PerFrameHeight[mapCoord], height);
 }
 
@@ -71,19 +69,19 @@ void Accumulate(uint3 id : SV_DispatchThreadID)
 void Apply(uint3 id : SV_DispatchThreadID)
 {
 	int h = _PerFrameHeight[id.xy];
-    float2 p = _EnvHeightMapWritable[id.xy];
+	float2 p = _EnvHeightMapWritable[id.xy];
 	
-    _PerFrameHeight[id.xy] = UNWRITTEN_INT;
-    int written = (h != UNWRITTEN_INT);
+	_PerFrameHeight[id.xy] = UNWRITTEN_INT;
+	int written = (h != UNWRITTEN_INT);
 	
-    float r = lerp(p.r, (float) h / (float) HEIGHT_INT_FACTOR, written);
-    float g = max(p.g, written);
-    _EnvHeightMapWritable[id.xy] = float2(r, g);
+	float r = lerp(p.r, (float) h / (float) HEIGHT_INT_FACTOR, written);
+	float g = max(p.g, written);
+	_EnvHeightMapWritable[id.xy] = float2(r, g);
 }
 
 [numthreads(8, 8, 1)]
 void Init(uint3 id : SV_DispatchThreadID)
 {
-    _PerFrameHeight[id.xy] = UNWRITTEN_INT;
-    _EnvHeightMapWritable[id.xy] = 0;
+	_PerFrameHeight[id.xy] = UNWRITTEN_INT;
+	_EnvHeightMapWritable[id.xy] = 0;
 }

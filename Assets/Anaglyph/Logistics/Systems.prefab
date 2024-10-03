@@ -458,11 +458,11 @@ MonoBehaviour:
   envMap: {fileID: 8400000, guid: 1eb5be4ba7caeb54ead07444a9c3dec8, type: 2}
   depthRange: {x: 0.5, y: 5}
   heightRange: {x: -2, y: 2}
-  edgeFilterSize: 0.02
-  gradientCutoff: 0.3
+  edgeFilterSize: 0.01
+  gradientCutoff: 0.5
   envSize: 50
   depthSamples: 512
-  depthFrameCrop: 0.25
+  depthFrameCrop: 0.1
 --- !u!114 &6196957721144016666
 MonoBehaviour:
   m_ObjectHideFlags: 0
