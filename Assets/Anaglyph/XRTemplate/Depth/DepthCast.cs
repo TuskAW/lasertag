@@ -16,7 +16,7 @@ public struct DepthCastResult
 namespace Anaglyph.XRTemplate.DepthKit
 {
 	[DefaultExecutionOrder(-30)]
-	public class DepthCast : MonoBehaviour
+	public class DepthCast : SingletonBehavior<DepthCast>
 	{
 		private const Camera.MonoOrStereoscopicEye Left = Camera.MonoOrStereoscopicEye.Left;
 
@@ -151,12 +151,8 @@ namespace Anaglyph.XRTemplate.DepthKit
 
 		public static Camera Camera { get; private set; }
 
-		public static DepthCast Instance { get; private set; }
-
-		private void Awake()
+		protected override void SingletonAwake()
 		{
-			Instance = this;
-
 			resultsCB?.Release();
 			resultsCB = null;
 		}
@@ -175,11 +171,6 @@ namespace Anaglyph.XRTemplate.DepthKit
 					Shader.GetGlobalTexture(DepthKitDriver.dk_DepthTexture_ID));
 		}
 
-		private void OnDestroy()
-		{
-			resultsCB?.Release();
-		}
-
 		private ComputeBuffer GetComputeBuffers(int size)
 		{
 			if (resultsCB != null && resultsCB.count != size)
@@ -195,6 +186,11 @@ namespace Anaglyph.XRTemplate.DepthKit
 			}
 
 			return resultsCB;
+		}
+
+		protected override void OnSingletonDestroy()
+		{
+			resultsCB?.Release();
 		}
 	}
 }

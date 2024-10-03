@@ -1,14 +1,13 @@
+using Anaglyph.XRTemplate;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class MeshPlane : MonoBehaviour
+public class EnvironmentHeightPlane : MonoBehaviour
 {
 	private MeshFilter meshFilter;
 
 	[SerializeField] private int verticesPerSide;
-	[SerializeField] private float size;
-	[SerializeField] private bool generateOnStart;
 
 	private void Awake()
 	{
@@ -17,12 +16,11 @@ public class MeshPlane : MonoBehaviour
 
 	private void Start()
 	{
-		if(generateOnStart)
-			GeneratePlaneMesh(verticesPerSide, size);
+		GeneratePlaneMesh(verticesPerSide, EnvironmentMapper.Instance.EnvironmentSize);
 	}
 
 	// Function to create a subdivided plane
-	public void GeneratePlaneMesh(int verticesPerSide, float size)
+	private void GeneratePlaneMesh(int verticesPerSide, float size)
 	{
 		Mesh mesh = new Mesh();
 

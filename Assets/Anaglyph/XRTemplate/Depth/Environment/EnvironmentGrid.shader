@@ -1,6 +1,6 @@
 
 
-Shader "Anaglyph/RoomMap" {
+Shader "Anaglyph/EnvironmentGrid" {
 	Properties {
 		_MainTex ("Texture", 2D) = "white" {}
 		_Scale("Scale", Float) = 5
@@ -23,8 +23,8 @@ Shader "Anaglyph/RoomMap" {
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Assets/Anaglyph/XRTemplate/Depth/Environment/Environment.hlsl"
 
-			TEXTURE2D(_MainTex);
-			SAMPLER(sampler_MainTex);
+			Texture2D<float2> _MainTex;
+			SamplerState bilinearRepeat;
 
 			float _Scale;
 			float _Darken;
@@ -60,11 +60,11 @@ Shader "Anaglyph/RoomMap" {
 				float3 uvPosScaled = IN.positionOBJ * _Scale;
 				uvPosScaled -= float3(0, 0.2, 0);
 
-				float grid = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.yz)
-				           + SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.xy)
-				           + SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uvPosScaled.xz);
+				float grid = _MainTex.Sample(bilinearRepeat, uvPosScaled.xy)
+				           + _MainTex.Sample(bilinearRepeat, uvPosScaled.yz)
+				           + _MainTex.Sample(bilinearRepeat, uvPosScaled.xz); 
 				
-				float2 heightMapVal = agdk_EnvHeightMap.SampleLevel(agdk_pointClampSampler, IN.uv, 0).rg; 
+				float2 heightMapVal = agdk_EnvHeightMap.Sample(bilinearRepeat, IN.uv, 0).rg; 
 
 				float4 result;
 				result.rgb = grid;

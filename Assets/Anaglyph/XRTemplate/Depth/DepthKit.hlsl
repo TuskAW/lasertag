@@ -61,9 +61,9 @@ float3 NDCtoWorld(float3 ndc, int eye = 0)
     return worldH.xyz / worldH.w;
 }
 
-bool WorldWithinDepthFrame(float3 world, float crop = 0)
+bool WorldWithinDepthFrame(float3 world)
 {
     float3 ndc = WorldtoNDC(world);
-    return (ndc.x > crop) * (ndc.x < 1 - crop)
-		* (ndc.y > crop) * (ndc.y < 1 - crop);
+    return (ndc.x > 0) * (ndc.x < 1)
+		* (ndc.y > 0) * (ndc.y < 1);
 }

@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Grid
+  m_Name: EnvironmentGrid
   m_Shader: {fileID: 4800000, guid: 395157a1a0e5369498d7897a7e81674d, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -46,7 +46,7 @@ Material:
     m_Ints: []
     m_Floats:
     - Scale: 5
-    - _Darken: 0.5
+    - _Darken: 0.3
     - _MaxHeight: 2
     - _Scale: 10
     m_Colors:

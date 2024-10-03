@@ -6,7 +6,7 @@ using UnityEngine.Experimental.Rendering;
 namespace Anaglyph.XRTemplate
 {
 	[DefaultExecutionOrder(-10)]
-	public class EnvironmentMapper : MonoBehaviour
+	public class EnvironmentMapper : SingletonBehavior<EnvironmentMapper>
 	{
 		[SerializeField] private ComputeShader compute;
 		[SerializeField] private RenderTexture envMap; //should be 32 bit float
@@ -18,9 +18,9 @@ namespace Anaglyph.XRTemplate
 		[SerializeField] private float gradientCutoff = 0.2f;
 
 		[SerializeField] private float envSize = 50;
+		public float EnvironmentSize => envSize;
 
 		[SerializeField] private int depthSamples = 128;
-		[SerializeField] private float depthFrameCrop = 0.1f;
 
 		private (int x, int y, int z) groups0;
 		private (int x, int y, int z) groups1;
@@ -28,15 +28,14 @@ namespace Anaglyph.XRTemplate
 
 		private static int ID(string str) => Shader.PropertyToID(str);
 
-		public static readonly int agdk_EnvSize = ID(nameof(agdk_EnvSize));
-		public static readonly int agdk_EnvHeightMap = ID(nameof(agdk_EnvHeightMap));
+		private static readonly int agdk_EnvSize = ID(nameof(agdk_EnvSize));
+		private static readonly int agdk_EnvHeightMap = ID(nameof(agdk_EnvHeightMap));
 
 		private static readonly int _PerFrameHeight = ID(nameof(_PerFrameHeight));
 		private static readonly int _EnvHeightMapWritable = ID(nameof(_EnvHeightMapWritable));
 		private static readonly int _TexSize = ID(nameof(_TexSize));
 		
 		private static readonly int _DepthSamples = ID(nameof(_DepthSamples));
-		private static readonly int _DepthCrop = ID(nameof(_DepthCrop));
 
 		private static readonly int _DepthRange = ID(nameof(_DepthRange));
 		private static readonly int _HeightRange = ID(nameof(_HeightRange));
@@ -47,8 +46,8 @@ namespace Anaglyph.XRTemplate
 		private static readonly int _GradientCutoff = ID(nameof(_GradientCutoff));
 
 		private RenderTexture perFrameMap;
-
-		private void Awake()
+		
+		protected override void SingletonAwake()
 		{
 			Shader.SetGlobalFloat(agdk_EnvSize, envSize);
 			Shader.SetGlobalTexture(agdk_EnvHeightMap, envMap);
@@ -68,7 +67,6 @@ namespace Anaglyph.XRTemplate
 
 			compute.SetFloat(_TexSize, envMap.width);
 			compute.SetInt(_DepthSamples, depthSamples);
-			compute.SetFloat(_DepthCrop, depthFrameCrop);
 
 			compute.SetVector(_DepthRange, depthRange);
 			compute.SetVector(_HeightRange, heightRange);
@@ -108,8 +106,6 @@ namespace Anaglyph.XRTemplate
 
 			compute.Dispatch(0, groups0.x, groups0.y, groups0.z);
 			compute.Dispatch(1, groups1.x, groups1.y, groups1.z);
-
-			Shader.SetGlobalTexture(agdk_EnvHeightMap, envMap);
 		}
 
 		private void OnDisable()
@@ -117,6 +113,11 @@ namespace Anaglyph.XRTemplate
 			RenderTexture.active = envMap;
 			GL.Clear(true, true, Color.black);
 			RenderTexture.active = null;
+		}
+
+		protected override void OnSingletonDestroy()
+		{
+			
 		}
 	}
 }
