@@ -13,6 +13,7 @@ uint _TexSize;
 uint _DepthSamples;
 
 float2 _DepthRange;
+float4 _DepthFrameCrop;
 float2 _HeightRange;
 
 float3 _DepthFramePos;
@@ -23,34 +24,43 @@ float _GradientCutoff;
 #define HEIGHT_INT_FACTOR 1000
 #define UNWRITTEN_INT -32000
 
+bool WorldWithinCroppedDepthFrame(float3 world)
+{
+    float2 ndc = WorldtoNDC(world);
+    return all(ndc.xy > _DepthFrameCrop.xy) && all(ndc.xy < _DepthFrameCrop.zw);
+}
+
 [numthreads(64, 1, 1)] 
 void Accumulate(uint3 id : SV_DispatchThreadID)
 {
 	float2 depthUV = id.xy / (float) _DepthSamples;
+    depthUV = _DepthFrameCrop.xy + depthUV * (_DepthFrameCrop.zw - _DepthFrameCrop.xy);
 	float depth = SampleDepthNDC(depthUV);
 	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
 	uint2 mapCoord = agdk_WorldToEnvUV(depthWorld) * _TexSize;
 	
 	// within valid height range
-	bool validY = (_HeightRange.x < depthWorld.y) && (depthWorld.y < _HeightRange.y);
+    float2 heightRangeWorld = _HeightRange + _DepthFramePos.y;
+    bool validY = heightRangeWorld.x < depthWorld.y && depthWorld.y < heightRangeWorld.y;
 	
 	// within valid distance
 	float dist = distance(depthWorld.xz, _DepthFramePos.xz);
-	bool validDistance = (_DepthRange.x < dist) && (dist < _DepthRange.y);
+	bool validDistance = _DepthRange.x < dist && dist < _DepthRange.y;
 	
 	// previous height is visible in view
-	float prevHeight = _EnvHeightMapWritable[mapCoord].r;
+    float2 heightMapVal = _EnvHeightMapWritable[mapCoord];
+    float prevHeight = heightMapVal.r;
+    bool written = heightMapVal.g;
 	float3 prevWorldPos = float3(depthWorld.x, prevHeight, depthWorld.z);
-	bool prevHeightInView = WorldWithinDepthFrame(prevWorldPos);
+    bool prevHeightInView = WorldWithinCroppedDepthFrame(prevWorldPos) || !written;
 	
 	// sobel outline - need to optimize 
-	float dl = DepthNDCToLinear(depth);
-	float dlL = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(-_EdgeFilterSize, 0)));
-	float dlR = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(_EdgeFilterSize, 0)));
-	float dlU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, _EdgeFilterSize)));
-	float dlD = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, -_EdgeFilterSize)));
-	float sob = abs(dlL - dl) + abs(dlR - dl) + abs(dlU - dl) + abs(dlD - dl);
-	bool notEdge = sob < _GradientCutoff;
+	//float dl = DepthNDCToLinear(depth);
+	float dlL = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(_EdgeFilterSize, 0)));
+    float dlR = DepthNDCToLinear(SampleDepthNDC(depthUV - float2(_EdgeFilterSize, 0)));
+    float dlU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, _EdgeFilterSize)));
+    float dlD = DepthNDCToLinear(SampleDepthNDC(depthUV - float2(0, _EdgeFilterSize)));
+    bool notEdge = abs(dlL - dlR) < _GradientCutoff && abs(dlD - dlU) < _GradientCutoff;
 	
 	bool valid = validY && validDistance && prevHeightInView && notEdge;
 	
@@ -71,6 +81,7 @@ void Apply(uint3 id : SV_DispatchThreadID)
 	
 	float height = intHeight / (float) HEIGHT_INT_FACTOR;
 	height = lerp(mapVal.r, height, writtenThisFrame);
+    height = lerp(mapVal.r, height, 0.2);
 	float written = max(mapVal.g, writtenThisFrame);
 	_EnvHeightMapWritable[id.xy] = float2(height, written);
 }

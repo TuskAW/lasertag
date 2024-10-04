@@ -1,10 +1,19 @@
 # ninja log v5
 17	480	7496833009832328	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	181b9c9753c4b8d
-6	482	7496833009872978	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e9694501806d7596
-20	482	7496833009903241	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	36c4e56f31f830db
+583	667	7496833011734114	C:/Users/jt/source/lasertag/Library/PramData/AndroidApplicationController/Cache/com.trev3d.lasertag/gradle-project/unityLibrary/build/intermediates/cxx/Debug/6k3g2xo4/obj/arm64-v8a/libgame.so	4ad04e1da1eb4e7f
 23	504	7496833010100376	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4fc109ef247c0571
+6	482	7496833009872978	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e9694501806d7596
 0	510	7496833010166331	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	b59ebb210a121669
+20	482	7496833009903241	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	36c4e56f31f830db
 14	512	7496833010166331	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	71ad105a0a6736df
 11	546	7496833010505002	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	7c50bb9d36a23442
 2	583	7496833010883987	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	92150fbfedeb84c1
-583	667	7496833011734114	C:/Users/jt/source/lasertag/Library/PramData/AndroidApplicationController/Cache/com.trev3d.lasertag/gradle-project/unityLibrary/build/intermediates/cxx/Debug/6k3g2xo4/obj/arm64-v8a/libgame.so	4ad04e1da1eb4e7f
+23	378	7496981651476064	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	181b9c9753c4b8d
+11	379	7496981651501280	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	71ad105a0a6736df
+13	389	7496981651607339	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e9694501806d7596
+16	394	7496981651647555	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	36c4e56f31f830db
+26	397	7496981651692864	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4fc109ef247c0571
+4	412	7496981651830270	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	b59ebb210a121669
+19	463	7496981652319688	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	7c50bb9d36a23442
+8	502	7496981652696316	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	92150fbfedeb84c1
+502	584	7496981653564424	C:/Users/jt/source/lasertag/Library/PramData/AndroidApplicationController/Cache/com.trev3d.lasertag/gradle-project/unityLibrary/build/intermediates/cxx/Debug/6k3g2xo4/obj/arm64-v8a/libgame.so	4ad04e1da1eb4e7f

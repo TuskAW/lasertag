@@ -12,6 +12,8 @@ namespace Anaglyph.XRTemplate
 		[SerializeField] private RenderTexture envMap; //should be 32 bit float
 
 		[SerializeField] private Vector2 depthRange = new Vector2(0.5f, 6f);
+		[Header("Left, Bottom, Width, Height")]
+		[SerializeField] private Vector4 depthFrameCrop = new(0, 0, 1, 1);
 		[SerializeField] private Vector2 heightRange = new Vector2(-2f, 2f);
 
 		[SerializeField] private float edgeFilterSize = 0.02f;
@@ -38,6 +40,7 @@ namespace Anaglyph.XRTemplate
 		private static readonly int _DepthSamples = ID(nameof(_DepthSamples));
 
 		private static readonly int _DepthRange = ID(nameof(_DepthRange));
+		private static readonly int _DepthFrameCrop = ID(nameof(_DepthFrameCrop));
 		private static readonly int _HeightRange = ID(nameof(_HeightRange));
 
 		private static readonly int _DepthFramePos = ID(nameof(_DepthFramePos));
@@ -69,6 +72,7 @@ namespace Anaglyph.XRTemplate
 			compute.SetInt(_DepthSamples, depthSamples);
 
 			compute.SetVector(_DepthRange, depthRange);
+			compute.SetVector(_DepthFrameCrop, depthFrameCrop);
 			compute.SetVector(_HeightRange, heightRange);
 
 			compute.SetFloat(_EdgeFilterSize, edgeFilterSize);

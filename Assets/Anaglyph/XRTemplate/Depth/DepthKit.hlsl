@@ -25,6 +25,7 @@ float4 SampleEdgeDepthNDC(float2 uv, int eye = 0)
 
 float DepthNDCToLinear(float depthNDC)
 {
+    depthNDC = depthNDC * 2.0 - 1.0;
     return (1.0f / (depthNDC + dk_ZBufferParams.y)) * dk_ZBufferParams.x;
 }
 
