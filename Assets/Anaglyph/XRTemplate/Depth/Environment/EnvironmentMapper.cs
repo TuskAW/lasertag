@@ -100,9 +100,34 @@ namespace Anaglyph.XRTemplate
 			compute.Dispatch(2, groups2.x, groups2.y, groups2.z);
 		}
 
-		private void Update()
+		private void LateUpdate()
 		{
 			if (!DepthKitDriver.DepthAvailable) return;
+
+#if UNITY_EDITOR
+			compute.SetInt(_TexSize, envMap.width);
+
+			compute.SetFloat(_TexSize, envMap.width);
+			compute.SetInt(_DepthSamples, depthSamples);
+
+			compute.SetVector(_DepthRange, depthRange);
+			compute.SetVector(_DepthFrameCrop, depthFrameCrop);
+			compute.SetVector(_HeightRange, heightRange);
+
+			compute.SetFloat(_EdgeFilterSize, edgeFilterSize);
+			compute.SetFloat(_GradientCutoff, gradientCutoff);
+
+			compute.SetTexture(0, _EnvHeightMapWritable, envMap);
+			compute.SetTexture(0, _PerFrameHeight, perFrameMap);
+
+			compute.SetTexture(1, _EnvHeightMapWritable, envMap);
+			compute.SetTexture(1, _PerFrameHeight, perFrameMap);
+
+			compute.SetTexture(2, _EnvHeightMapWritable, envMap);
+			compute.SetTexture(2, _PerFrameHeight, perFrameMap);
+
+			//compute.Dispatch(2, groups2.x, groups2.y, groups2.z);
+#endif
 
 			Texture depthTex = Shader.GetGlobalTexture(DepthKitDriver.dk_DepthTexture_ID);
 			compute.SetTexture(0, DepthKitDriver.dk_DepthTexture_ID, depthTex);

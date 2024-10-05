@@ -26,67 +26,69 @@ float _GradientCutoff;
 
 bool WorldWithinCroppedDepthFrame(float3 world)
 {
-    float2 ndc = WorldtoNDC(world);
-    return all(ndc.xy > _DepthFrameCrop.xy) && all(ndc.xy < _DepthFrameCrop.zw);
+	float2 ndc = WorldtoNDC(world);
+	return all(ndc.xy > _DepthFrameCrop.xy) && all(ndc.xy < _DepthFrameCrop.zw);
 }
 
-[numthreads(64, 1, 1)] 
+[numthreads(64, 1, 1)]
 void Accumulate(uint3 id : SV_DispatchThreadID)
 {
 	float2 depthUV = id.xy / (float) _DepthSamples;
-    depthUV = _DepthFrameCrop.xy + depthUV * (_DepthFrameCrop.zw - _DepthFrameCrop.xy);
-	float depth = SampleDepthNDC(depthUV);
+	depthUV = _DepthFrameCrop.xy + depthUV * (_DepthFrameCrop.zw - _DepthFrameCrop.xy);
+	float depth = saturate(SampleDepthNDC(depthUV));
 	float3 depthWorld = NDCtoWorld(float3(depthUV, depth));
-	uint2 mapCoord = agdk_WorldToEnvUV(depthWorld) * _TexSize;
+	int2 mapCoord = round(agdk_WorldToEnvUV(depthWorld) * _TexSize);
 	
 	// within valid height range
-    float2 heightRangeWorld = _HeightRange + _DepthFramePos.y;
-    bool validY = heightRangeWorld.x < depthWorld.y && depthWorld.y < heightRangeWorld.y;
+	float2 heightRangeWorld = _HeightRange + _DepthFramePos.y;
+	bool validY = heightRangeWorld.x < depthWorld.y && depthWorld.y < heightRangeWorld.y;
 	
 	// within valid distance
 	float dist = distance(depthWorld.xz, _DepthFramePos.xz);
 	bool validDistance = _DepthRange.x < dist && dist < _DepthRange.y;
 	
 	// previous height is visible in view
-    float2 heightMapVal = _EnvHeightMapWritable[mapCoord];
-    float prevHeight = heightMapVal.r;
-    bool written = heightMapVal.g;
+	float2 heightMapVal = _EnvHeightMapWritable[mapCoord];
+	float prevHeight = heightMapVal.r;
+	bool written = heightMapVal.g;
 	float3 prevWorldPos = float3(depthWorld.x, prevHeight, depthWorld.z);
-    bool prevHeightInView = WorldWithinCroppedDepthFrame(prevWorldPos) || !written;
+	bool prevHeightInView = WorldWithinCroppedDepthFrame(prevWorldPos) || !written;
 	
 	// sobel outline - need to optimize 
 	//float dl = DepthNDCToLinear(depth);
 	float dlL = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(_EdgeFilterSize, 0)));
-    float dlR = DepthNDCToLinear(SampleDepthNDC(depthUV - float2(_EdgeFilterSize, 0)));
-    float dlU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, _EdgeFilterSize)));
-    float dlD = DepthNDCToLinear(SampleDepthNDC(depthUV - float2(0, _EdgeFilterSize)));
-    bool notEdge = abs(dlL - dlR) < _GradientCutoff && abs(dlD - dlU) < _GradientCutoff;
+	float dlR = DepthNDCToLinear(SampleDepthNDC(depthUV - float2(_EdgeFilterSize, 0)));
+	float dlU = DepthNDCToLinear(SampleDepthNDC(depthUV + float2(0, _EdgeFilterSize)));
+	float dlD = DepthNDCToLinear(SampleDepthNDC(depthUV - float2(0, _EdgeFilterSize)));
+	bool notEdge = abs(dlL - dlR) < _GradientCutoff && abs(dlD - dlU) < _GradientCutoff;
 	
-	bool valid = validY && validDistance && prevHeightInView && notEdge;
+    bool valid = validY && validDistance && notEdge;// && prevHeightInView; // && notEdge;
 	
-	float height = lerp(prevHeight, depthWorld.y, valid);
-	int intHeight = round(height * HEIGHT_INT_FACTOR);
+	int intHeight = round(depthWorld.y * HEIGHT_INT_FACTOR);
+	intHeight = lerp(UNWRITTEN_INT, intHeight, valid);
 	
 	InterlockedMax(_PerFrameHeight[mapCoord], intHeight);
+	//_PerFrameHeight[mapCoord] = max(_PerFrameHeight[mapCoord], intHeight);
+	//_EnvHeightMapWritable[mapCoord] = float2(_PerFrameHeight[mapCoord] / (float) HEIGHT_INT_FACTOR, 1);
 }
 
-[numthreads(8, 8, 1)]
+[numthreads(64, 1, 1)]
 void Apply(uint3 id : SV_DispatchThreadID)
 {
 	int intHeight = _PerFrameHeight[id.xy];
 	float2 mapVal = _EnvHeightMapWritable[id.xy]; // r = height, g = is written
 	
 	_PerFrameHeight[id.xy] = UNWRITTEN_INT;
-	bool writtenThisFrame = intHeight != UNWRITTEN_INT;
+    bool writtenThisFrame = intHeight != UNWRITTEN_INT;
 	
 	float height = intHeight / (float) HEIGHT_INT_FACTOR;
 	height = lerp(mapVal.r, height, writtenThisFrame);
-    height = lerp(mapVal.r, height, 0.2);
+	//height = lerp(mapVal.r, height, 0.2);
 	float written = max(mapVal.g, writtenThisFrame);
 	_EnvHeightMapWritable[id.xy] = float2(height, written);
 }
 
-[numthreads(8, 8, 1)]
+[numthreads(64, 1, 1)]
 void Init(uint3 id : SV_DispatchThreadID)
 {
 	_PerFrameHeight[id.xy] = UNWRITTEN_INT;
